@@ -37,13 +37,14 @@ export default function App() {
     const deferredAllocations = React.useDeferredValue(allocations);
     const deferredSettings = React.useDeferredValue(settings);
 
-    // Shopify iFrame Resizer Logic
+    // Shopify iFrame Resizer Logic - Robust Version
     useEffect(() => {
         const sendHeight = () => {
-            const root = document.getElementById('root');
-            if (root) {
-                // Add a small buffer to prevent cut-off
-                const height = root.scrollHeight;
+            // Use offsetHeight of the main wrapper for the most accurate content height
+            const wrapper = document.getElementById('app-wrapper');
+            if (wrapper) {
+                // Measure the actual rendered height including any bottom margin/padding
+                const height = wrapper.getBoundingClientRect().height + 40;
                 window.parent.postMessage({ type: 'resize', height }, '*');
             }
         };
@@ -52,20 +53,26 @@ export default function App() {
         sendHeight();
 
         // 2. Observer for content/DOM changes
-        const observer = new MutationObserver(sendHeight);
-        const root = document.getElementById('root');
-        if (root) {
-            observer.observe(root, { attributes: true, childList: true, subtree: true });
+        const mutationObserver = new MutationObserver(sendHeight);
+
+        // 3. ResizeObserver for fluid changes (like charts resizing)
+        const resizeObserver = new ResizeObserver(sendHeight);
+
+        const wrapper = document.getElementById('app-wrapper');
+        if (wrapper) {
+            mutationObserver.observe(wrapper, { attributes: true, childList: true, subtree: true });
+            resizeObserver.observe(wrapper);
         }
 
-        // 3. Window resize listener
+        // 4. Window resize listener
         window.addEventListener('resize', sendHeight);
 
-        // 4. Periodic check (catches animations or delayed rendering)
-        const interval = setInterval(sendHeight, 1000);
+        // 5. Periodic check (last resort)
+        const interval = setInterval(sendHeight, 500);
 
         return () => {
-            observer.disconnect();
+            mutationObserver.disconnect();
+            resizeObserver.disconnect();
             window.removeEventListener('resize', sendHeight);
             clearInterval(interval);
         };
@@ -152,17 +159,20 @@ export default function App() {
     const parsedTimeline = useMemo(() => {
         if (loading || strategies.length === 0) return [];
         // Determine global window once
-        let maxStartDate = '';
+        let maxStartDate: string = '';
         const allDatesSet = new Set<string>();
-        strategies.forEach(s => {
-            const dates = Array.from(s.data.keys()).sort();
-            if (dates.length > 0 && dates[0] > maxStartDate) maxStartDate = dates[0];
-            dates.forEach(d => allDatesSet.add(d));
+        strategies.forEach((s: Strategy) => {
+            const dates = Array.from(s.data.keys()) as string[];
+            if (dates.length > 0) {
+                const firstDate = dates[0];
+                if (firstDate > maxStartDate) maxStartDate = firstDate;
+            }
+            dates.forEach((d: string) => allDatesSet.add(d));
         });
-        if (spyData) Array.from(spyData.keys()).forEach(d => allDatesSet.add(d));
+        if (spyData) Array.from(spyData.keys()).forEach((d: string) => allDatesSet.add(d));
 
-        return Array.from(allDatesSet)
-            .filter(d => d >= maxStartDate)
+        return (Array.from(allDatesSet) as string[])
+            .filter((d: string) => d >= maxStartDate)
             .sort()
             .map(date => {
                 const dObj = new Date(date);
@@ -317,7 +327,7 @@ export default function App() {
 
     }, [strategies, deferredAllocations, deferredSettings, spyData, loading, contributionFreq, parsedTimeline]);
 
-    const totalAllocation = Object.values(allocations).reduce((a: number, b: number) => a + b, 0);
+    const totalAllocation = (Object.values(allocations) as number[]).reduce((a: number, b: number) => a + b, 0);
 
     // Discount Logic Refined (Only count priced strategies)
     const pricedStrategies = strategies.filter(s => (allocations[s.id] || 0) > 0 && s.price && s.price > 0);
@@ -388,13 +398,13 @@ export default function App() {
     };
 
     return (
-        <div className="h-auto min-h-0 flex flex-col bg-neutral-50 font-sans text-neutral-700">
+        <div id="app-wrapper" className="h-auto flex flex-col bg-neutral-50 font-sans text-neutral-700 overflow-hidden">
 
             <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:p-0 print:max-w-none">
 
                 {/* Sidebar - Hidden during Print */}
                 <aside className="lg:col-span-3 print:hidden">
-                    <div className="sticky top-6 max-h-[calc(100vh-2rem)] overflow-y-auto custom-scrollbar flex flex-col gap-6 pr-1 pb-4">
+                    <div className="lg:sticky lg:top-6 flex flex-col gap-6 pr-1 pb-4">
 
                         {/* Capital Settings */}
                         <div className="bg-white rounded-lg border border-neutral-200 p-5">
@@ -598,7 +608,7 @@ export default function App() {
                                                         </td>
                                                         <td className="py-3 text-right text-neutral-700 tabular-nums">{allocations[s.id]}%</td>
                                                         <td className="py-3 text-right tabular-nums text-neutral-700">
-                                                            ${(settings.initialBalance * ((allocations[s.id] || 0) / 100)).toLocaleString()}
+                                                            ${Math.round(settings.initialBalance * ((allocations[s.id] || 0) / 100)).toLocaleString()}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -608,7 +618,7 @@ export default function App() {
                                                     <td className="py-3 font-semibold text-neutral-900">Total</td>
                                                     <td className="py-3 text-right font-semibold text-neutral-900">{totalAllocation}%</td>
                                                     <td className="py-3 text-right font-semibold text-neutral-900 tabular-nums">
-                                                        ${(settings.initialBalance * (totalAllocation / 100)).toLocaleString()}
+                                                        ${Math.round(settings.initialBalance * (totalAllocation / 100)).toLocaleString()}
                                                     </td>
                                                 </tr>
                                             </tfoot>
