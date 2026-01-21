@@ -1,222 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Architect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Architect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            canvas: '#f7fafd',
+            surface: '#ffffff',
+            stripe: {
+              primary: '#1a1f36',
+              secondary: '#3c4257',
+              muted: '#697386',
+              border: '#e3e8ee',
+              'border-input': '#d8dee4',
+              hover: '#f8f9fa',
             },
-            colors: {
-              canvas: '#f7fafd',
-              surface: '#ffffff',
-              stripe: {
-                primary: '#1a1f36',
-                secondary: '#3c4257',
-                muted: '#697386',
-                border: '#e3e8ee',
-                'border-input': '#d8dee4',
-                hover: '#f8f9fa',
-              },
-              accent: {
-                DEFAULT: '#004CFF',
-                hover: '#001960',
-                light: 'rgba(0, 76, 255, 0.08)',
-              },
-              success: '#0e6245',
-              danger: '#cd3d64',
+            accent: {
+              DEFAULT: '#004CFF',
+              hover: '#001960',
+              light: 'rgba(0, 76, 255, 0.08)',
             },
-            borderRadius: {
-              DEFAULT: '4px',
-              sm: '2px',
-              md: '4px',
-              lg: '6px',
-            },
-            boxShadow: {
-              'stripe-sm': '0 1px 1px 0 rgba(0,0,0,0.08), 0 1px 3px 0 rgba(60,66,87,0.04)',
-              'stripe': '0 2px 5px 0 rgba(60,66,87,0.1), 0 1px 1px 0 rgba(0,0,0,0.07)',
-              'stripe-md': '0 7px 14px 0 rgba(60,66,87,0.08), 0 3px 6px 0 rgba(0,0,0,0.08)',
-              'stripe-focus': '0 0 0 3px rgba(0, 76, 255, 0.2)',
-            },
-            fontSize: {
-              'xs': ['12px', { lineHeight: '1.4' }],
-              'sm': ['13px', { lineHeight: '1.5' }],
-              'base': ['14px', { lineHeight: '1.5' }],
-              'lg': ['16px', { lineHeight: '1.4' }],
-              'xl': ['20px', { lineHeight: '1.3' }],
-              '2xl': ['24px', { lineHeight: '1.2' }],
-            },
-            screens: {
-              'print': {'raw': 'print'},
-            }
+            success: '#0e6245',
+            danger: '#cd3d64',
+          },
+          borderRadius: {
+            DEFAULT: '4px',
+            sm: '2px',
+            md: '4px',
+            lg: '6px',
+          },
+          boxShadow: {
+            'stripe-sm': '0 1px 1px 0 rgba(0,0,0,0.08), 0 1px 3px 0 rgba(60,66,87,0.04)',
+            'stripe': '0 2px 5px 0 rgba(60,66,87,0.1), 0 1px 1px 0 rgba(0,0,0,0.07)',
+            'stripe-md': '0 7px 14px 0 rgba(60,66,87,0.08), 0 3px 6px 0 rgba(0,0,0,0.08)',
+            'stripe-focus': '0 0 0 3px rgba(0, 76, 255, 0.2)',
+          },
+          fontSize: {
+            'xs': ['12px', { lineHeight: '1.4' }],
+            'sm': ['13px', { lineHeight: '1.5' }],
+            'base': ['14px', { lineHeight: '1.5' }],
+            'lg': ['16px', { lineHeight: '1.4' }],
+            'xl': ['20px', { lineHeight: '1.3' }],
+            '2xl': ['24px', { lineHeight: '1.2' }],
+          },
+          screens: {
+            'print': { 'raw': 'print' },
           }
         }
       }
-    </script>
-    <style>
-      :root {
-        --canvas: #f7fafd;
-        --surface: #ffffff;
-        --text-primary: #1a1f36;
-        --text-secondary: #3c4257;
-        --text-muted: #697386;
-        --border: #e3e8ee;
-        --border-input: #d8dee4;
-        --accent: #004CFF;
-        --accent-hover: #001960;
-        --success: #0e6245;
-        --danger: #cd3d64;
+    }
+  </script>
+  <style>
+    :root {
+      --canvas: #f7fafd;
+      --surface: #ffffff;
+      --text-primary: #1a1f36;
+      --text-secondary: #3c4257;
+      --text-muted: #697386;
+      --border: #e3e8ee;
+      --border-input: #d8dee4;
+      --accent: #004CFF;
+      --accent-hover: #001960;
+      --success: #0e6245;
+      --danger: #cd3d64;
+    }
+
+    body {
+      background-color: transparent !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      color: var(--text-secondary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Stripe-style scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #d8dee4;
+      border-radius: 3px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #c1c9d2;
+    }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Stripe-style range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      height: 20px;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: var(--border);
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--accent);
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      margin-top: -5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    input[type="range"]::-moz-range-track {
+      background: var(--border);
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      background: var(--accent);
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      border: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    /* PRINT STYLES */
+    @media print {
+      @page {
+        margin: 15mm;
+        size: A4 portrait;
       }
-      
+
       body {
-        background-color: var(--canvas);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 14px;
-        color: var(--text-secondary);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      
-      /* Stripe-style scrollbar */
-      .custom-scrollbar::-webkit-scrollbar {
-        height: 6px;
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #d8dee4;
-        border-radius: 3px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: #c1c9d2;
+        background-color: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        font-size: 12pt;
       }
 
-      /* Hide number input spinners */
-      input[type=number]::-webkit-inner-spin-button, 
-      input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
-      }
-      input[type=number] {
-        -moz-appearance: textfield;
-      }
-      
-      /* Stripe-style range slider */
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        background: transparent;
-        cursor: pointer;
-        height: 20px;
-      }
-      input[type="range"]::-webkit-slider-runnable-track {
-        background: var(--border);
-        height: 4px;
-        border-radius: 2px;
-      }
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        background: var(--accent);
-        height: 14px;
-        width: 14px;
-        border-radius: 50%;
-        margin-top: -5px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        transition: transform 0.15s ease;
-      }
-      input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.1);
-      }
-      input[type="range"]::-moz-range-track {
-        background: var(--border);
-        height: 4px;
-        border-radius: 2px;
-      }
-      input[type="range"]::-moz-range-thumb {
-        background: var(--accent);
-        height: 14px;
-        width: 14px;
-        border-radius: 50%;
-        border: none;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      aside,
+      button,
+      .no-print,
+      .print\:hidden {
+        display: none !important;
       }
 
-      /* PRINT STYLES */
-      @media print {
-        @page {
-          margin: 15mm;
-          size: A4 portrait;
-        }
-
-        body {
-          background-color: white !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          font-size: 12pt;
-        }
-
-        aside, 
-        button, 
-        .no-print, 
-        .print\:hidden {
-          display: none !important;
-        }
-
-        main {
-          display: block !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          padding: 0 !important;
-          margin: 0 !important;
-        }
-
-        #report-content {
-          width: 90% !important;
-          margin: 0 auto !important;
-          display: block !important;
-          grid-column: span 12 !important;
-        }
-
-        .bg-white, .shadow-stripe, .rounded, .border {
-          box-shadow: none !important;
-          border: none !important;
-        }
-        
-        .recharts-responsive-container {
-          width: 100% !important;
-          height: auto !important;
-          max-height: 400px;
-        }
-        
-        .grid-cols-1, .lg\:grid-cols-2, .xl\:grid-cols-2 {
-            grid-template-columns: 1fr !important;
-            gap: 2rem !important;
-        }
-
-        .break-inside-avoid {
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-        
-        .break-before-page {
-            page-break-before: always;
-            break-before: always;
-        }
+      main {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+      #report-content {
+        width: 90% !important;
+        margin: 0 auto !important;
+        display: block !important;
+        grid-column: span 12 !important;
+      }
+
+      .bg-white,
+      .shadow-stripe,
+      .rounded,
+      .border {
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      .recharts-responsive-container {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 400px;
+      }
+
+      .grid-cols-1,
+      .lg\:grid-cols-2,
+      .xl\:grid-cols-2 {
+        grid-template-columns: 1fr !important;
+        gap: 2rem !important;
+      }
+
+      .break-inside-avoid {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .break-before-page {
+        page-break-before: always;
+        break-before: always;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="importmap">
 {
   "imports": {
@@ -229,10 +244,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
+
+<body>
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
