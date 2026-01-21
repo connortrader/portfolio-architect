@@ -398,9 +398,9 @@ export default function App() {
     };
 
     return (
-        <div id="app-wrapper" className="h-auto flex flex-col bg-neutral-50 font-sans text-neutral-700 overflow-hidden">
+        <div id="app-wrapper" className="h-auto flex flex-col bg-transparent font-sans text-neutral-700 overflow-hidden">
 
-            <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:p-0 print:max-w-none">
+            <main className="flex-1 max-w-[1600px] w-full mx-auto py-4 md:py-8 px-0 grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:p-0 print:max-w-none">
 
                 {/* Sidebar - Hidden during Print */}
                 <aside className="lg:col-span-3 print:hidden">
