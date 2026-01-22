@@ -18,14 +18,31 @@ This document outlines the precise algorithms, assumptions, and limitations used
 
 The most critical aspect of this tool is how it handles time-series data. It does not simulate a standard brokerage account with "open" and "closed" trades. Instead, it simulates a **mathematically rebalanced index** of strategies.
 
-### 2.1 Daily Rebalancing Protocol (Constant Risk)
-The simulation utilizes a **Daily Rebalancing** engine. This is a deliberate design choice that differs from typical "Buy and Hold" or "Monthly Rebalancing" live accounts.
+### 2.1 Rebalancing Protocols: How Allocations Are Managed
+The simulation now supports three distinct modes of capital management, which will produce different equity curves even for the exact same underlying strategies. It is critical to choose the one that matches your real-world intent.
 
-*   **How It Works:** At the close of *every* trading day, the simulation calculates the total Net Asset Value (NAV) of the portfolio. It then effectively "sells" strategies that have drifted above their target allocation and "buys" strategies that have drifted below.
-*   **The Implications (Live vs. Simulation):**
-    *   **Live Trend Following:** In a real account, if you have a strategy holding a stock for 3 months and it gains +50%, that position becomes a larger % of your portfolio. You "let the winner run" (Drift).
-    *   **Daily Simulation:** This tool "trims" that winner every single day to bring it back to the original weight (e.g., 20%).
-*   **Conclusion:** This methodology creates a **conservative equity curve** for strong trend-following strategies because it systematically reduces exposure to winning positions. However, it provides a purer measure of **Correlation** and **Volatility reduction** because it maintains a constant risk profile.
+#### A. Daily Rebalancing (Constant Risk)
+*   **Mechanism:** At the close of *every* trading day, the portfolio is reset to your exact target weights (e.g., 50% Strategy / 50% Cash).
+*   **The Effect:** This effectively "Sells Rips" (takes profit daily) and "Buys Dips" (adds to losers daily).
+*   **Result:** This minimizes drift but acts as an active trading strategy in itself ("Constant Mix" or "Volatility Pumping"). Captures the "Rebalancing Bonus" in volatile sideways markets but may underperform in strong unidirectional trends.
+
+#### B. Periodic Rebalancing (Monthly/Quarterly/Annual) - "Drift"
+*   **Mechanism:** The portfolio is allowed to **Drift** freely between rebalance dates.
+    *   *Example:* You start 50/50. If the strategy goes up during the month, you might end the month at 60% Strategy / 40% Cash.
+    *   *Inputs:* New cash contributions (inflows) are added proportionally to the *current drifted weights* to avoid accidentally triggering a rebalance.
+    *   *Reset:* On the 1st trading day of the new period (Month/Quarter/Year), the portfolio is forcibly traded back to the 50/50 Target.
+*   **Result:** This closely mimics a standard "Passive Income" or periodic maintenance schedule.
+
+#### C. None (Buy & Hold) - "Fire and Forget"
+*   **Mechanism:** Capital is allocated once at the start (e.g., $50k Strategy, $50k Cash) and **NEVER** rebalanced.
+*   **The Effect:** If your strategy does well, it will eventually become 99% of your portfolio. Cash drag decreases over time if the simulated asset outperforms cash.
+*   **Use Case:** Use this if you just want to see your single strategy's equity curve scaled by your initial capital, without any secondary portfolio-level trading effects.
+
+### 2.2 Why results differ for a Single Strategy?
+If you select a **single strategy** with **50% allocation** (meaning 50% Cash):
+*   **"None"** will look exactly like your strategy's curve, just at half the value.
+*   **"Daily Rebalancing"** will look different because you are simulating a daily trade: selling a tiny bit of your strategy every day it goes up to buy Cash, and buying a tiny bit every day it goes down. This **changes the outcome**.
+*   **"Annual Rebalancing"** will look distinct again, as the rebalance (buy/sell) only happens once a year.
 
 ### 2.2 Net-of-Fees Strategy Data
 Unlike standard "Gross" backtests available on many platforms, the strategy data ingested by Portfolio Architect is calculated **Net of Fees**. The simulation assumes the following friction costs are already deducted from the underlying daily returns:

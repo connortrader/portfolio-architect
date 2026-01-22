@@ -22,6 +22,9 @@ export default function App() {
     // Chart State - Log Scale Default is TRUE now
     const [isLogScale] = useState(true);
 
+    // Rebalancing Frequency
+    const [rebalanceFreq, setRebalanceFreq] = useState("daily");
+
     // Derived numeric settings
     const settings = useMemo(() => ({
         initialBalance: Number(initialBalanceStr) || 0,
@@ -36,6 +39,7 @@ export default function App() {
     // This allows the sliders to be snappy while the heavy simulation logic runs in the background
     const deferredAllocations = React.useDeferredValue(allocations);
     const deferredSettings = React.useDeferredValue(settings);
+    const deferredRebalanceFreq = React.useDeferredValue(rebalanceFreq);
 
     // Shopify iFrame Resizer Logic - Robust Version
     useEffect(() => {
@@ -179,7 +183,8 @@ export default function App() {
                 return {
                     date,
                     timestamp: dObj.getTime(),
-                    month: dObj.getMonth()
+                    month: dObj.getMonth(),
+                    year: dObj.getFullYear()
                 };
             });
     }, [strategies, spyData, loading]);
@@ -193,9 +198,15 @@ export default function App() {
 
         const activeStrategies = strategies.filter(s => activeIds.includes(s.id));
         const strategyWeights = activeStrategies.map(s => (deferredAllocations[s.id] || 0) / 100);
+        const totalAllocatedWeight = strategyWeights.reduce((a, b) => a + b, 0);
 
         // 2. Initialize Simulation Variables
         const startBalance = deferredSettings.initialBalance;
+
+        // Track allocations in dollars for drift
+        let currentStratBalances = activeStrategies.map((_, idx) => startBalance * strategyWeights[idx]);
+        let currentCashBalance = startBalance * (1 - totalAllocatedWeight);
+
         const lastPrices: number[] = activeStrategies.map(s => {
             let p = s.data.get(parsedTimeline[0].date);
             if (p === undefined) p = Array.from(s.data.entries()).find(([d]) => d >= parsedTimeline[0].date)?.[1];
@@ -204,7 +215,8 @@ export default function App() {
 
         const combinedEquityIdx: number[] = [startBalance];
         const twrEquityIdx: number[] = [100];
-        const strategyEquitiesIdx: number[][] = activeStrategies.map((_, idx) => [startBalance * strategyWeights[idx]]);
+
+        const strategyEquitiesIdx: number[][] = activeStrategies.map((_, idx) => [currentStratBalances[idx]]);
         const spyEquityIdx: number[] = [];
 
         let spyLastPrice = 0;
@@ -216,42 +228,102 @@ export default function App() {
         if (spyStartPrice > 0) spyEquityIdx.push(startBalance);
 
         let currentMonth = parsedTimeline[0].month;
+        let currentYear = parsedTimeline[0].year;
 
         // 3. Iterate Daily Returns
         for (let i = 1; i < parsedTimeline.length; i++) {
-            const { date, month } = parsedTimeline[i];
-            let weightedDayReturn = 0;
+            const { date, month, year } = parsedTimeline[i];
+
+            // 1. Calculate Market Returns & Update Balances (Drift)
+            let dailyTotalStrategies = 0;
+            const prevTotalBalance = combinedEquityIdx[i - 1];
 
             for (let j = 0; j < activeStrategies.length; j++) {
                 const s = activeStrategies[j];
                 const currPrice = s.data.get(date) ?? lastPrices[j];
                 const dailyRet = lastPrices[j] > 0 ? (currPrice - lastPrices[j]) / lastPrices[j] : 0;
-
-                weightedDayReturn += dailyRet * strategyWeights[j];
                 lastPrices[j] = currPrice;
 
-                // Track individual strategy equity
-                const prevStratEq = strategyEquitiesIdx[j][i - 1];
-                strategyEquitiesIdx[j].push(prevStratEq * (1 + dailyRet));
+                // Apply return
+                currentStratBalances[j] *= (1 + dailyRet);
+                dailyTotalStrategies += currentStratBalances[j];
+
+                // Track indiv strategies
+                const prevStratIndep = strategyEquitiesIdx[j][i - 1];
+                strategyEquitiesIdx[j].push(prevStratIndep * (1 + dailyRet));
             }
+
+            // Total Portfolio Value = Strategy Balances + Cash Balance
+            const dailyTotalBeforeFlows = dailyTotalStrategies + currentCashBalance;
+
+            // Portfolio Daily Return (TWR component)
+            const portfolioDailyRet = prevTotalBalance > 0 ? (dailyTotalBeforeFlows - prevTotalBalance) / prevTotalBalance : 0;
 
             const prevTWR = twrEquityIdx[i - 1];
-            twrEquityIdx.push(prevTWR * (1 + weightedDayReturn));
+            twrEquityIdx.push(prevTWR * (1 + portfolioDailyRet));
 
+            // 2. Handle Contributions (Flows)
             let injectionAmount = 0;
-            if (month !== currentMonth) {
-                let shouldInject = false;
-                if (contributionFreq === 'monthly') shouldInject = true;
-                else if (contributionFreq === 'quarterly') shouldInject = (month % 3 === 0);
-                else if (contributionFreq === 'semi-annually') shouldInject = (month % 6 === 0);
-                else if (contributionFreq === 'annually') shouldInject = (month === 0);
 
-                if (shouldInject) injectionAmount = deferredSettings.monthlyContribution;
-                currentMonth = month;
+            // Contribution Schedule Checking
+            if (month !== currentMonth) {
+                // Monthly Boundary
+                if (contributionFreq === 'monthly') injectionAmount = deferredSettings.monthlyContribution;
+                else if (contributionFreq === 'quarterly' && month % 3 === 0) injectionAmount = deferredSettings.monthlyContribution;
+                else if (contributionFreq === 'semi-annually' && month % 6 === 0) injectionAmount = deferredSettings.monthlyContribution;
+                else if (contributionFreq === 'annually' && month === 0) injectionAmount = deferredSettings.monthlyContribution;
             }
 
-            const prevBalance = combinedEquityIdx[i - 1];
-            combinedEquityIdx.push((prevBalance * (1 + weightedDayReturn)) + injectionAmount);
+            // 3. Handle Rebalancing
+            let shouldRebalance = false;
+            if (deferredRebalanceFreq === 'daily') {
+                shouldRebalance = true;
+            } else if (deferredRebalanceFreq === 'monthly') {
+                if (month !== currentMonth) shouldRebalance = true;
+            } else if (deferredRebalanceFreq === 'quarterly') {
+                if (month !== currentMonth && month % 3 === 0) shouldRebalance = true;
+            } else if (deferredRebalanceFreq === 'annually') {
+                if (year !== currentYear) shouldRebalance = true;
+            } else if (deferredRebalanceFreq === 'none') {
+                shouldRebalance = false;
+            }
+
+            // Update Time Trackers
+            if (month !== currentMonth) currentMonth = month;
+            if (year !== currentYear) currentYear = year;
+
+
+            // Apply Flows & Rebalance
+            let newTotalBalance = dailyTotalBeforeFlows + injectionAmount;
+
+            if (shouldRebalance) {
+                // Reset to Target Weights
+                for (let j = 0; j < activeStrategies.length; j++) {
+                    currentStratBalances[j] = newTotalBalance * strategyWeights[j];
+                }
+                currentCashBalance = newTotalBalance * (1 - totalAllocatedWeight);
+            } else {
+                // No Rebalance - Drift Continues
+                if (injectionAmount > 0) {
+                    // Inject proportional to CURRENT drifted weights (neutral injection)
+                    if (dailyTotalBeforeFlows > 0) {
+                        for (let j = 0; j < activeStrategies.length; j++) {
+                            const prop = currentStratBalances[j] / dailyTotalBeforeFlows;
+                            currentStratBalances[j] += injectionAmount * prop;
+                        }
+                        const cashProp = currentCashBalance / dailyTotalBeforeFlows;
+                        currentCashBalance += injectionAmount * cashProp;
+                    } else {
+                        // If busted, reset to target
+                        for (let j = 0; j < activeStrategies.length; j++) {
+                            currentStratBalances[j] = newTotalBalance * strategyWeights[j];
+                        }
+                        currentCashBalance = newTotalBalance * (1 - totalAllocatedWeight);
+                    }
+                }
+            }
+
+            combinedEquityIdx.push(newTotalBalance);
 
             if (spyData) {
                 const sPrice = spyData.get(date);
@@ -325,7 +397,7 @@ export default function App() {
             activeStrategies
         } as unknown as SimulationResult;
 
-    }, [strategies, deferredAllocations, deferredSettings, spyData, loading, contributionFreq, parsedTimeline]);
+    }, [strategies, deferredAllocations, deferredSettings, deferredRebalanceFreq, spyData, loading, contributionFreq, parsedTimeline]);
 
     const totalAllocation = (Object.values(allocations) as number[]).reduce((a: number, b: number) => a + b, 0);
 
@@ -397,14 +469,30 @@ export default function App() {
         setIsCheckingOut(false);
     };
 
+    // Sidebar Sticky Logic (via Parent Message)
+    const [sidebarOffset, setSidebarOffset] = useState(0);
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'scroll') {
+                setSidebarOffset(Number(event.data.offset) || 0);
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
     return (
         <div id="app-wrapper" className="h-auto flex flex-col bg-transparent font-sans text-neutral-700 overflow-hidden">
 
             <main className="flex-1 max-w-[1600px] w-full mx-auto py-4 md:py-8 px-0 grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:p-0 print:max-w-none">
 
                 {/* Sidebar - Hidden during Print */}
-                <aside className="lg:col-span-3 print:hidden">
-                    <div className="lg:sticky lg:top-6 flex flex-col gap-6 pr-1 pb-4">
+                <aside className="lg:col-span-3 print:hidden relative">
+                    <div
+                        className="flex flex-col gap-6 pr-1 pb-4 transition-transform duration-75 ease-out will-change-transform"
+                        style={{ transform: `translateY(${sidebarOffset}px)` }}
+                    >
 
                         {/* Capital Settings */}
                         <div className="bg-white rounded-lg border border-neutral-200 p-5">
@@ -425,6 +513,20 @@ export default function App() {
                                             className="w-full pl-1 pr-3 py-2 bg-transparent border-none focus:ring-0 text-sm tabular-nums text-neutral-900 placeholder-neutral-400 outline-none"
                                         />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-neutral-500 mb-1.5">Rebalancing Frequency</label>
+                                    <select
+                                        value={rebalanceFreq}
+                                        onChange={(e) => setRebalanceFreq(e.target.value)}
+                                        className="w-full text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-2 text-neutral-700 outline-none focus:border-neutral-400 cursor-pointer"
+                                    >
+                                        <option value="daily">Daily</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                        <option value="annually">Annually</option>
+                                        <option value="none">None (Buy & Hold)</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <div className="flex justify-between items-center mb-1.5">
