@@ -23,7 +23,7 @@ export default function App() {
     const [isLogScale] = useState(true);
 
     // Rebalancing Frequency
-    const [rebalanceFreq, setRebalanceFreq] = useState("daily");
+    const [rebalanceFreq, setRebalanceFreq] = useState("monthly");
 
     // Derived numeric settings
     const settings = useMemo(() => ({
@@ -165,15 +165,34 @@ export default function App() {
         // Determine global window once
         let maxStartDate: string = '';
         const allDatesSet = new Set<string>();
+
         strategies.forEach((s: Strategy) => {
-            const dates = Array.from(s.data.keys()) as string[];
-            if (dates.length > 0) {
-                const firstDate = dates[0];
-                if (firstDate > maxStartDate) maxStartDate = firstDate;
+            // Only consider dates from ACTIVE strategies. 
+            // This prevents inactive strategies (uploaded CSVs with different dates) from corrupting the timeline with "flat" days.
+            if ((allocations[s.id] || 0) > 0) {
+                const dates = Array.from(s.data.keys()) as string[];
+
+                // Track Max Start Date for the subset of active strategies
+                if (dates.length > 0) {
+                    const firstDate = dates[0];
+                    if (firstDate > maxStartDate) maxStartDate = firstDate;
+                }
+
+                // Add these dates to the set
+                dates.forEach((d: string) => allDatesSet.add(d));
             }
-            dates.forEach((d: string) => allDatesSet.add(d));
         });
-        if (spyData) Array.from(spyData.keys()).forEach((d: string) => allDatesSet.add(d));
+
+        // Optimization: Do NOT add SPY dates to the master timeline. 
+        // If SPY has dates that the strategy doesn't (excess holidays/data noise), it dilutes strategy returns.
+        // We only want to simulate on days where we actually have strategy decisions/data.
+        // if (spyData) Array.from(spyData.keys()).forEach((d: string) => allDatesSet.add(d));
+
+        // If no active strategies, rely on all available dates (or min date)? 
+        // If maxStartDate is still empty (no active strategies), find the EARLIEST date of any strategy?
+        // But simulation doesn't run if no active strategies.
+        // Let's ensure maxStartDate is correctly set if user hasn't selected anything yet (preview mode).
+        // Actually, if nothing selected, simulation returns null anyway.
 
         return (Array.from(allDatesSet) as string[])
             .filter((d: string) => d >= maxStartDate)
@@ -187,7 +206,7 @@ export default function App() {
                     year: dObj.getFullYear()
                 };
             });
-    }, [strategies, spyData, loading]);
+    }, [strategies, spyData, loading, allocations]);
 
     // Simulation Logic
     const simulation = useMemo<SimulationResult | null>(() => {
@@ -469,30 +488,14 @@ export default function App() {
         setIsCheckingOut(false);
     };
 
-    // Sidebar Sticky Logic (via Parent Message)
-    const [sidebarOffset, setSidebarOffset] = useState(0);
-
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'scroll') {
-                setSidebarOffset(Number(event.data.offset) || 0);
-            }
-        };
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, []);
-
     return (
         <div id="app-wrapper" className="h-auto flex flex-col bg-transparent font-sans text-neutral-700 overflow-hidden">
 
             <main className="flex-1 max-w-[1600px] w-full mx-auto py-4 md:py-8 px-0 grid grid-cols-1 lg:grid-cols-12 gap-8 print:block print:p-0 print:max-w-none">
 
                 {/* Sidebar - Hidden during Print */}
-                <aside className="lg:col-span-3 print:hidden relative">
-                    <div
-                        className="flex flex-col gap-6 pr-1 pb-4 transition-transform duration-75 ease-out will-change-transform"
-                        style={{ transform: `translateY(${sidebarOffset}px)` }}
-                    >
+                <aside className="lg:col-span-3 print:hidden">
+                    <div className="lg:sticky lg:top-6 flex flex-col gap-6 pr-1 pb-4">
 
                         {/* Capital Settings */}
                         <div className="bg-white rounded-lg border border-neutral-200 p-5">

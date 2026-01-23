@@ -127,9 +127,11 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   const startDate = new Date(dates[0]);
   const endDate = new Date(dates[dates.length - 1]);
 
-  // Calculate years accurately for CAGR
-  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-  const years = Math.max(diffTime / (365.25 * 24 * 3600 * 1000), 0.1); // Avoid divide by zero
+  // Calculate years based on TRADING DAYS (RealTest Logic: N / 252)
+  // We use dailyReturns.length because equityCurve has N points, returns has N-1 points.
+  // RealTest often counts bars. If daily data, bars = trading days.
+  const tradingDays = dailyReturns.length;
+  const years = Math.max(tradingDays / 252, 0.1);
   const cagr = firstValue > 0 ? Math.pow(lastValue / firstValue, 1 / years) - 1 : 0;
 
   let peak = -Infinity;
@@ -141,16 +143,21 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   }
 
   const avgReturn = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
-  const stdDev = Math.sqrt(dailyReturns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / dailyReturns.length);
+
+  // Calculate Sample Standard Deviation (N-1) for Sharpe
+  const sumSqDiff = dailyReturns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0);
+  const stdDev = dailyReturns.length > 1 ? Math.sqrt(sumSqDiff / (dailyReturns.length - 1)) : 0;
+
   const downsideReturns = dailyReturns.filter(r => r < 0);
   const downsideStdDev = Math.sqrt(downsideReturns.reduce((a, b) => a + Math.pow(b, 2), 0) / downsideReturns.length);
 
-  // Dynamic Annualization: Detect if 252 (stocks) or 365 (crypto) or other
-  // This fixes the issue where mixing crypto/stocks caused wrong Sharpe
+  // Dynamic Annualization for Sortino
   const samplesPerYear = dailyReturns.length / years;
   const annualizationFactor = Math.sqrt(samplesPerYear > 0 ? samplesPerYear : 252);
 
-  const sharpe = stdDev > 0 ? (avgReturn / stdDev) * annualizationFactor : 0;
+  // RealTest Sharpe Ratio: mu / sigma * sqrt(252)
+  // Standard annualization is sqrt(252). User prompt said 252, but likely meant annualized return (252) / annualized std (sqrt(252)) which simplifies to sqrt(252).
+  const sharpe = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
   const sortino = downsideStdDev > 0 ? (avgReturn / downsideStdDev) * annualizationFactor : 0;
   const calmar = maxDrawdown > 0 ? cagr / maxDrawdown : 0;
 
@@ -158,9 +165,20 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   const bestYear = annualValues.length ? Math.max(...annualValues) : 0;
   const worstYear = annualValues.length ? Math.min(...annualValues) : 0;
 
+  // DEBUG LOGGING
+  const totalReturn = firstValue > 0 ? (lastValue - firstValue) / firstValue : 0;
+  if (equityCurve.length > 0) {
+    console.log(`[FinanceService] Stats Calc for ${dates[0]} to ${dates[dates.length - 1]}`);
+    console.log(`[FinanceService] Days: ${dailyReturns.length} | Years (Cal): ${years.toFixed(4)}`);
+    console.log(`[FinanceService] Avg Daily Ret: ${avgReturn.toExponential(4)}`);
+    console.log(`[FinanceService] Daily StdDev (Sample): ${stdDev.toExponential(4)}`);
+    console.log(`[FinanceService] Sharpe (Manual Annualization * sqrt(252)): ${sharpe.toFixed(4)}`);
+    console.log(`[FinanceService] CAGR: ${(cagr * 100).toFixed(2)}% | TotalRet: ${(totalReturn * 100).toFixed(2)}%`);
+  }
+
   return {
     cagr, sharpe, sortino, maxDrawdown, calmar,
-    totalReturn: firstValue > 0 ? (lastValue - firstValue) / firstValue : 0,
+    totalReturn,
     finalBalance: lastValue,
     bestYear, worstYear,
     annualReturns, monthlyReturns, annualMaxDrawdowns
