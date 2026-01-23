@@ -16,8 +16,7 @@ export default function App() {
 
     // Use strings for inputs to allow clearing "0" easily
     const [initialBalanceStr, setInitialBalanceStr] = useState("100000");
-    const [monthlyContributionStr, setMonthlyContributionStr] = useState("0");
-    const [contributionFreq, setContributionFreq] = useState("monthly");
+
 
     // Chart State - Log Scale Default is TRUE now
     const [isLogScale] = useState(true);
@@ -27,9 +26,8 @@ export default function App() {
 
     // Derived numeric settings
     const settings = useMemo(() => ({
-        initialBalance: Number(initialBalanceStr) || 0,
-        monthlyContribution: Number(monthlyContributionStr) || 0
-    }), [initialBalanceStr, monthlyContributionStr]);
+        initialBalance: Number(initialBalanceStr) || 0
+    }), [initialBalanceStr]);
 
     const [spyData, setSpyData] = useState<Map<string, number> | null>(null);
     const [loading, setLoading] = useState(true);
@@ -281,17 +279,7 @@ export default function App() {
             const prevTWR = twrEquityIdx[i - 1];
             twrEquityIdx.push(prevTWR * (1 + portfolioDailyRet));
 
-            // 2. Handle Contributions (Flows)
-            let injectionAmount = 0;
 
-            // Contribution Schedule Checking
-            if (month !== currentMonth) {
-                // Monthly Boundary
-                if (contributionFreq === 'monthly') injectionAmount = deferredSettings.monthlyContribution;
-                else if (contributionFreq === 'quarterly' && month % 3 === 0) injectionAmount = deferredSettings.monthlyContribution;
-                else if (contributionFreq === 'semi-annually' && month % 6 === 0) injectionAmount = deferredSettings.monthlyContribution;
-                else if (contributionFreq === 'annually' && month === 0) injectionAmount = deferredSettings.monthlyContribution;
-            }
 
             // 3. Handle Rebalancing
             let shouldRebalance = false;
@@ -312,8 +300,8 @@ export default function App() {
             if (year !== currentYear) currentYear = year;
 
 
-            // Apply Flows & Rebalance
-            let newTotalBalance = dailyTotalBeforeFlows + injectionAmount;
+            // Apply Rebalance
+            let newTotalBalance = dailyTotalBeforeFlows;
 
             if (shouldRebalance) {
                 // Reset to Target Weights
@@ -321,26 +309,8 @@ export default function App() {
                     currentStratBalances[j] = newTotalBalance * strategyWeights[j];
                 }
                 currentCashBalance = newTotalBalance * (1 - totalAllocatedWeight);
-            } else {
-                // No Rebalance - Drift Continues
-                if (injectionAmount > 0) {
-                    // Inject proportional to CURRENT drifted weights (neutral injection)
-                    if (dailyTotalBeforeFlows > 0) {
-                        for (let j = 0; j < activeStrategies.length; j++) {
-                            const prop = currentStratBalances[j] / dailyTotalBeforeFlows;
-                            currentStratBalances[j] += injectionAmount * prop;
-                        }
-                        const cashProp = currentCashBalance / dailyTotalBeforeFlows;
-                        currentCashBalance += injectionAmount * cashProp;
-                    } else {
-                        // If busted, reset to target
-                        for (let j = 0; j < activeStrategies.length; j++) {
-                            currentStratBalances[j] = newTotalBalance * strategyWeights[j];
-                        }
-                        currentCashBalance = newTotalBalance * (1 - totalAllocatedWeight);
-                    }
-                }
             }
+            // Else: Drift Continues
 
             combinedEquityIdx.push(newTotalBalance);
 
@@ -352,7 +322,12 @@ export default function App() {
         }
 
         const datesOnly = parsedTimeline.map(t => t.date);
+
+        // 1. TWR Stats (Pure Strategy Performance - Sharpe, CAGR, Volatility)
+        // With no cashflows, TWR and Combined Equity are identical in shape.
         const stats = calculateStats(twrEquityIdx, datesOnly);
+
+        // Final Val
         stats.finalBalance = combinedEquityIdx[combinedEquityIdx.length - 1];
         stats.totalReturn = (stats.finalBalance - startBalance) / startBalance;
 
@@ -416,7 +391,7 @@ export default function App() {
             activeStrategies
         } as unknown as SimulationResult;
 
-    }, [strategies, deferredAllocations, deferredSettings, deferredRebalanceFreq, spyData, loading, contributionFreq, parsedTimeline]);
+    }, [strategies, deferredAllocations, deferredSettings, deferredRebalanceFreq, spyData, loading, parsedTimeline]);
 
     const totalAllocation = (Object.values(allocations) as number[]).reduce((a: number, b: number) => a + b, 0);
 
@@ -531,39 +506,7 @@ export default function App() {
                                         <option value="none">None (Buy & Hold)</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <label className="block text-xs font-medium text-neutral-500">Cash Inflow</label>
-                                        <select
-                                            value={contributionFreq}
-                                            onChange={(e) => setContributionFreq(e.target.value)}
-                                            className="text-xs bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-neutral-700 outline-none focus:border-neutral-400 cursor-pointer"
-                                        >
-                                            <option value="monthly">Monthly</option>
-                                            <option value="quarterly">Quarterly</option>
-                                            <option value="semi-annually">Semi-Annually</option>
-                                            <option value="annually">Annually</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex items-center bg-neutral-50 border border-neutral-200 rounded-lg h-10 focus-within:border-neutral-400 transition-all overflow-hidden">
-                                        <span className="pl-3 text-neutral-400 text-sm select-none">$</span>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={monthlyContributionStr}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                // Only allow non-negative numbers
-                                                if (val === "" || Number(val) >= 0) {
-                                                    setMonthlyContributionStr(val);
-                                                }
-                                            }}
-                                            onFocus={(e) => e.target.value === '0' && setMonthlyContributionStr('')}
-                                            onBlur={(e) => e.target.value === '' && setMonthlyContributionStr('0')}
-                                            className="w-full pl-1 pr-3 py-2 bg-transparent border-none focus:ring-0 text-sm tabular-nums text-neutral-900 placeholder-neutral-400 outline-none"
-                                        />
-                                    </div>
-                                </div>
+
                             </div>
                         </div>
 
