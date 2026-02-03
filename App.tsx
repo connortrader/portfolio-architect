@@ -502,8 +502,8 @@ export default function App() {
         const cartItems = variantIds.map(id => `${id}:1`).join(',');
         const checkoutUrl = `https://setupalpha.com/cart/${cartItems}`;
 
-        // 3. Open in new tab
-        window.open(checkoutUrl, '_blank');
+        // 3. Redirect main page to checkout
+        if (window.top) { window.top.location.href = checkoutUrl; } else { window.location.href = checkoutUrl; }
 
         setIsCheckingOut(false);
     };
@@ -814,4 +814,6 @@ export default function App() {
 }
 
 // Force Update
+
+
 
