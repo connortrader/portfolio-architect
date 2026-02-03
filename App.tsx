@@ -143,6 +143,51 @@ export default function App() {
         loadData();
     }, []);
 
+    // pSEO: Handle URL Parameters (?strat=Name1,Name2&weights=50,50)
+    useEffect(() => {
+        if (!loading && strategies.length > 0) {
+            console.log("pSEO: Checking URL parameters...");
+            // 1. Check iframe URL first
+            let params = new URLSearchParams(window.location.search);
+
+            // 2. Try to check parent window (Shopify) if no params in iframe
+            if (!params.has('strat')) {
+                try {
+                    if (window.self !== window.top) {
+                        const parentParams = new URLSearchParams(window.top.location.search);
+                        if (parentParams.has('strat')) {
+                            params = parentParams;
+                            console.log('pSEO: Found parameters in Shopify URL');
+                        }
+                    }
+                } catch (e) {
+                    console.log('pSEO: Cannot access parent URL (CORS), waiting for direct/iframe parameters');
+                }
+            }
+
+            const stratParam = params.get('strat');
+            const weightsParam = params.get('weights');
+
+            if (stratParam && weightsParam) {
+                const stratNames = stratParam.split(',').map(s => decodeURIComponent(s.trim()).toLowerCase());
+                const weightValues = weightsParam.split(',').map(Number);
+                const newAllocations: Record<string, number> = {};
+
+                stratNames.forEach((name, idx) => {
+                    const found = strategies.find(s => s.name.toLowerCase() === name);
+                    if (found && !isNaN(weightValues[idx])) {
+                        newAllocations[found.id] = weightValues[idx];
+                    }
+                });
+
+                if (Object.keys(newAllocations).length > 0) {
+                    setAllocations(newAllocations);
+                    console.log('pSEO: Applied allocations:', newAllocations);
+                }
+            }
+        }
+    }, [loading, strategies]);
+
     // Handle User Upload
     const handleUpload = (name: string, data: Map<string, number>) => {
         const newId = `u-${Date.now()}`;
