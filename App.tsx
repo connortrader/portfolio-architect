@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { Info, Loader2, BarChart2, ArrowRight, Check } from 'lucide-react';
 import { StrategyList } from './components/StrategyList';
 import { FileUpload } from './components/FileUpload';
@@ -466,7 +466,7 @@ export default function App() {
             bannerBgClass = "bg-amber-50 border-amber-200";
         } else {
             discount = 0.30;
-            nextTierMsg = "Maximum 30% Discount Unlocked! 🎉";
+            nextTierMsg = "Maximum 30% Discount Unlocked! ðŸŽ‰";
             bannerColorClass = "text-emerald-700";
             bannerBgClass = "bg-emerald-50 border-emerald-200";
         }
@@ -811,5 +811,7 @@ export default function App() {
             </main>
         </div >
     );
-}/ /   F o r c e   U p d a t e  
- 
+}
+
+// Force Update
+
