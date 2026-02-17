@@ -45,6 +45,32 @@ export function parseNumber(val: any): number {
   return isFinite(n) ? n : NaN;
 }
 
+// Detect data frequency from dates and return annualization factor
+function detectAnnualizationFactor(dates: string[]): number {
+  if (dates.length < 3) return 252; // default to daily
+
+  // Calculate median gap in calendar days between consecutive data points
+  const gaps: number[] = [];
+  for (let i = 1; i < Math.min(dates.length, 100); i++) {
+    const d1 = new Date(dates[i - 1]).getTime();
+    const d2 = new Date(dates[i]).getTime();
+    const diffDays = (d2 - d1) / (1000 * 60 * 60 * 24);
+    if (diffDays > 0) gaps.push(diffDays);
+  }
+
+  if (gaps.length === 0) return 252;
+
+  gaps.sort((a, b) => a - b);
+  const medianGap = gaps[Math.floor(gaps.length / 2)];
+
+  // Classify frequency based on median gap between data points
+  if (medianGap <= 5) return 252;       // Daily data (~1-3 calendar day gaps including weekends)
+  if (medianGap <= 12) return 52;       // Weekly data (~7 day gaps)
+  if (medianGap <= 45) return 12;       // Monthly data (~30 day gaps)
+  if (medianGap <= 120) return 4;       // Quarterly data (~90 day gaps)
+  return 1;                              // Annual data
+}
+
 export function calculateStats(equityCurve: number[], dates: string[]): PortfolioStats {
   if (!equityCurve || equityCurve.length < 2) {
     return {
@@ -53,6 +79,9 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
       annualReturns: {}, monthlyReturns: {}, annualMaxDrawdowns: {}
     };
   }
+
+  // Detect data frequency for correct annualization
+  const periodsPerYear = detectAnnualizationFactor(dates);
 
   const dailyReturns: number[] = [];
   const monthlyReturns: Record<number, Record<number, number>> = {};
@@ -127,11 +156,9 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   const startDate = new Date(dates[0]);
   const endDate = new Date(dates[dates.length - 1]);
 
-  // Calculate years based on TRADING DAYS (RealTest Logic: N / 252)
-  // We use dailyReturns.length because equityCurve has N points, returns has N-1 points.
-  // RealTest often counts bars. If daily data, bars = trading days.
+  // Calculate years based on detected data frequency
   const tradingDays = dailyReturns.length;
-  const years = Math.max(tradingDays / 252, 0.1);
+  const years = Math.max(tradingDays / periodsPerYear, 0.1);
   const cagr = firstValue > 0 ? Math.pow(lastValue / firstValue, 1 / years) - 1 : 0;
 
   let peak = -Infinity;
@@ -151,13 +178,10 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   const downsideReturns = dailyReturns.filter(r => r < 0);
   const downsideStdDev = Math.sqrt(downsideReturns.reduce((a, b) => a + Math.pow(b, 2), 0) / downsideReturns.length);
 
-  // Dynamic Annualization for Sortino
-  const samplesPerYear = dailyReturns.length / years;
-  const annualizationFactor = Math.sqrt(samplesPerYear > 0 ? samplesPerYear : 252);
+  // Annualize Sharpe and Sortino using detected frequency
+  const annualizationFactor = Math.sqrt(periodsPerYear);
 
-  // RealTest Sharpe Ratio: mu / sigma * sqrt(252)
-  // Standard annualization is sqrt(252). User prompt said 252, but likely meant annualized return (252) / annualized std (sqrt(252)) which simplifies to sqrt(252).
-  const sharpe = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
+  const sharpe = stdDev > 0 ? (avgReturn / stdDev) * annualizationFactor : 0;
   const sortino = downsideStdDev > 0 ? (avgReturn / downsideStdDev) * annualizationFactor : 0;
   const calmar = maxDrawdown > 0 ? cagr / maxDrawdown : 0;
 
@@ -168,11 +192,12 @@ export function calculateStats(equityCurve: number[], dates: string[]): Portfoli
   // DEBUG LOGGING
   const totalReturn = firstValue > 0 ? (lastValue - firstValue) / firstValue : 0;
   if (equityCurve.length > 0) {
+    const freqLabel = periodsPerYear === 252 ? 'Daily' : periodsPerYear === 52 ? 'Weekly' : periodsPerYear === 12 ? 'Monthly' : periodsPerYear === 4 ? 'Quarterly' : 'Annual';
     console.log(`[FinanceService] Stats Calc for ${dates[0]} to ${dates[dates.length - 1]}`);
-    console.log(`[FinanceService] Days: ${dailyReturns.length} | Years (Cal): ${years.toFixed(4)}`);
-    console.log(`[FinanceService] Avg Daily Ret: ${avgReturn.toExponential(4)}`);
-    console.log(`[FinanceService] Daily StdDev (Sample): ${stdDev.toExponential(4)}`);
-    console.log(`[FinanceService] Sharpe (Manual Annualization * sqrt(252)): ${sharpe.toFixed(4)}`);
+    console.log(`[FinanceService] Detected Frequency: ${freqLabel} (${periodsPerYear}/yr) | Periods: ${dailyReturns.length} | Years: ${years.toFixed(4)}`);
+    console.log(`[FinanceService] Avg Period Ret: ${avgReturn.toExponential(4)}`);
+    console.log(`[FinanceService] Period StdDev (Sample): ${stdDev.toExponential(4)}`);
+    console.log(`[FinanceService] Sharpe (sqrt(${periodsPerYear})): ${sharpe.toFixed(4)}`);
     console.log(`[FinanceService] CAGR: ${(cagr * 100).toFixed(2)}% | TotalRet: ${(totalReturn * 100).toFixed(2)}%`);
   }
 

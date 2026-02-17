@@ -743,7 +743,11 @@ export default function App() {
                                                     <div key={s.id} className="flex justify-between items-center text-sm">
                                                         <div className="flex items-center gap-2.5">
                                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }}></div>
-                                                            <span className="text-stripe-secondary font-medium">{s.name}</span>
+                                                            {s.infoUrl ? (
+                                                                <a href={s.infoUrl} target="_blank" rel="noopener noreferrer" className="text-stripe-secondary font-medium hover:text-accent underline-offset-2 hover:underline transition-colors cursor-pointer">{s.name}</a>
+                                                            ) : (
+                                                                <span className="text-stripe-secondary font-medium">{s.name}</span>
+                                                            )}
                                                         </div>
                                                         <span className="text-stripe-muted tabular-nums">${s.price}</span>
                                                     </div>

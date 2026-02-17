@@ -41,7 +41,7 @@ export interface PortfolioStats {
 }
 
 export const BUILT_IN_STRATEGIES = [
-  { name: "New MR 2025", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/newmr2025.json", price: 999, info: "https://setupalpha.com/products/mean-reversion-2025-realtest-strategy?variant=55056749723973" },
+  { name: "New MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/newmr2025.json", price: 999, info: "https://setupalpha.com/products/mean-reversion-2025-realtest-strategy?variant=55056749723973" },
   { name: "NASDAQ 100 MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/nasdaq_mr.json", price: 980, info: "https://setupalpha.com/products/nasdaq-100-mean-reversion-realtest-strategy?variant=55056713417029" },
   { name: "Weekly Pullback", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/weeklydip.json", price: 899, info: "https://setupalpha.com/products/weekly-pullback-realtest-strategy?variant=55056844226885" },
   { name: "ETF Rotation", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/etfrotation.json", price: 799, info: "https://setupalpha.com/products/etf-rotation-monthly-rebalance-realtest-strategy?variant=55056742252869" },
