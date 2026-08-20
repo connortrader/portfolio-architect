@@ -508,6 +508,22 @@ export default function App() {
         setIsCheckingOut(false);
     };
 
+    // Daily signals interest. No gtag needed in the iframe, since this lands on a Shopify
+    // page, so GA4 records the click as a page_view carrying these params.
+    const handleSignalsInterest = () => {
+        const params = new URLSearchParams({
+            utm_source: 'combiner',
+            utm_medium: 'portfolio_builder',
+            utm_campaign: 'daily_signals',
+            n: String(countForDiscount),
+            total: String(Math.round(finalPrice)),
+            mix: pricedStrategies.map(s => s.id).join(','),
+        });
+
+        const url = `https://setupalpha.com/pages/portfolio-daily-signals?${params.toString()}`;
+        if (window.top) { window.top.location.href = url; } else { window.location.href = url; }
+    };
+
     return (
         <div id="app-wrapper" className="h-auto flex flex-col bg-transparent font-sans text-neutral-700 overflow-hidden">
 
@@ -794,6 +810,17 @@ export default function App() {
                                             </button>
                                             <p className="text-center text-xs text-stripe-muted mt-2.5 flex items-center justify-center gap-1">
                                                 <Check size={10} /> Secure payment. Instant access.
+                                            </p>
+
+                                            <button
+                                                onClick={handleSignalsInterest}
+                                                className="w-full mt-4 bg-white hover:bg-canvas text-stripe-primary font-semibold py-2.5 rounded border border-stripe-border transition-all flex items-center justify-center gap-2 group"
+                                            >
+                                                <span>Daily signals for this portfolio</span>
+                                                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                                            </button>
+                                            <p className="text-center text-xs text-stripe-muted mt-2.5">
+                                                $90 per month. Cancel at any time.
                                             </p>
                                         </div>
                                     </div>
