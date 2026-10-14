@@ -52,7 +52,8 @@ export const BUILT_IN_STRATEGIES = [
   { name: "Parabolic Short", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/shortsellmr.json", price: 999, info: "https://setupalpha.com/products/parabolic-short-realtest-qullamaggie-strategy?variant=55056856547653" },
   { name: "Short Term MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/shorttermmr.json", price: 790, info: "https://setupalpha.com/products/short-term-mean-reversion-realtest-connors-alvarez?variant=55056869228869" },
   { name: "SPX MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/spxmr.json", price: 899, info: "https://setupalpha.com/products/spx-mean-reversion-realtest-strategy?variant=55056622223685" },
-  { name: "Low Drawdown NASDAQ MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/ndxmr.json", price: 999, info: "https://setupalpha.com/products/low-drawdown-nasdaq-mean-reversion-realtest-strategy?variant=55056870900037" }
+  { name: "Low Drawdown NASDAQ MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/ndxmr.json", price: 999, info: "https://setupalpha.com/products/low-drawdown-nasdaq-mean-reversion-realtest-strategy?variant=55056870900037" },
+  { name: "Turtle", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/turtle.json", price: 990, info: "https://setupalpha.com/products/turtle-trading-strategy?variant=59447090413893" }
 ];
 
 export const SPY_URL = 'https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/main/public_json/spybenchmark.json';
