@@ -41,7 +41,6 @@ export interface PortfolioStats {
 }
 
 export const BUILT_IN_STRATEGIES = [
-  { name: "Free MR Strategy", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/free.json", price: 0, info: "https://setupalpha.com/products/free-realtest-strategy?variant=57044660584773" },
   { name: "New MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/newmr2025.json", price: 999, info: "https://setupalpha.com/products/mean-reversion-2025-realtest-strategy?variant=55056749723973" },
   { name: "NASDAQ 100 MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/nasdaq_mr.json", price: 980, info: "https://setupalpha.com/products/nasdaq-100-mean-reversion-realtest-strategy?variant=55056713417029" },
   { name: "Weekly Pullback", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/weeklydip.json", price: 899, info: "https://setupalpha.com/products/weekly-pullback-realtest-strategy?variant=55056844226885" },
@@ -54,7 +53,8 @@ export const BUILT_IN_STRATEGIES = [
   { name: "Short Term MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/shorttermmr.json", price: 790, info: "https://setupalpha.com/products/short-term-mean-reversion-realtest-connors-alvarez?variant=55056869228869" },
   { name: "SPX MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/spxmr.json", price: 899, info: "https://setupalpha.com/products/spx-mean-reversion-realtest-strategy?variant=55056622223685" },
   { name: "Low Drawdown NASDAQ MR", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/ndxmr.json", price: 999, info: "https://setupalpha.com/products/low-drawdown-nasdaq-mean-reversion-realtest-strategy?variant=55056870900037" },
-  { name: "Turtle", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/turtle.json", price: 990, info: "https://setupalpha.com/products/turtle-trading-strategy?variant=59447090413893" }
+  { name: "Turtle", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/turtle.json", price: 990, info: "https://setupalpha.com/products/turtle-trading-strategy?variant=59447090413893" },
+  { name: "Free MR Strategy", url: "https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/refs/heads/main/public_json/free.json", price: 0, info: "https://setupalpha.com/products/free-realtest-strategy?variant=57044660584773" }
 ];
 
 export const SPY_URL = 'https://raw.githubusercontent.com/SaCapitalManagement/CapitalManagementLtd/main/public_json/spybenchmark.json';
