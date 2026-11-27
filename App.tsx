@@ -440,39 +440,10 @@ export default function App() {
 
     const totalAllocation = (Object.values(allocations) as number[]).reduce((a: number, b: number) => a + b, 0);
 
-    // Discount Logic Refined (Only count priced strategies)
+    // Selected paid strategies & total price
     const pricedStrategies = strategies.filter(s => (allocations[s.id] || 0) > 0 && s.price && s.price > 0);
-    const countForDiscount = pricedStrategies.length;
-
-    const originalPrice = pricedStrategies.reduce((sum, s) => sum + (s.price || 0), 0);
-
-    let discount = 0;
-    let nextTierMsg = "";
-    let bannerColorClass = "text-slate-500";
-    let bannerBgClass = "bg-slate-50 border-slate-200";
-
-    if (countForDiscount > 0) {
-        if (countForDiscount < 4) {
-            const needed = 4 - countForDiscount;
-            discount = 0;
-            nextTierMsg = `Add ${needed} more strategy${needed > 1 ? 'ies' : ''} to save 20%`;
-            bannerColorClass = "text-blue-600";
-            bannerBgClass = "bg-blue-50 border-blue-200";
-        } else if (countForDiscount >= 4 && countForDiscount < 6) {
-            discount = 0.20;
-            const needed = 6 - countForDiscount;
-            nextTierMsg = `20% Discount Active! Add ${needed} more to save 30%`;
-            bannerColorClass = "text-amber-700";
-            bannerBgClass = "bg-amber-50 border-amber-200";
-        } else {
-            discount = 0.30;
-            nextTierMsg = "Maximum 30% Discount Unlocked! ðŸŽ‰";
-            bannerColorClass = "text-emerald-700";
-            bannerBgClass = "bg-emerald-50 border-emerald-200";
-        }
-    }
-
-    const finalPrice = originalPrice * (1 - discount);
+    const paidStrategyCount = pricedStrategies.length;
+    const totalPrice = pricedStrategies.reduce((sum, s) => sum + (s.price || 0), 0);
 
     // Helper to extract variant ID from info URL
     const extractVariantId = (url: string) => {
@@ -506,22 +477,6 @@ export default function App() {
         if (window.top) { window.top.location.href = checkoutUrl; } else { window.location.href = checkoutUrl; }
 
         setIsCheckingOut(false);
-    };
-
-    // Daily signals interest. No gtag needed in the iframe, since this lands on a Shopify
-    // page, so GA4 records the click as a page_view carrying these params.
-    const handleSignalsInterest = () => {
-        const params = new URLSearchParams({
-            utm_source: 'combiner',
-            utm_medium: 'portfolio_builder',
-            utm_campaign: 'daily_signals',
-            n: String(countForDiscount),
-            total: String(Math.round(finalPrice)),
-            mix: pricedStrategies.map(s => s.id).join(','),
-        });
-
-        const url = `https://setupalpha.com/pages/portfolio-daily-signals?${params.toString()}`;
-        if (window.top) { window.top.location.href = url; } else { window.location.href = url; }
     };
 
     return (
@@ -737,15 +692,11 @@ export default function App() {
                             </div>
 
                             {/* Cost Section - Stripe-style checkout */}
-                            {originalPrice > 0 && (
+                            {totalPrice > 0 && (
                                 <div className="bg-white rounded-lg border border-neutral-200 overflow-hidden print:hidden">
-                                    {/* Header / Upsell Banner */}
+                                    {/* Header */}
                                     <div className="bg-canvas border-b border-stripe-border px-5 py-3 text-sm font-medium flex items-center justify-between">
-                                        <span className="text-stripe-secondary">{countForDiscount} Paid Strateg{countForDiscount === 1 ? 'y' : 'ies'} Selected</span>
-                                        <span className="flex items-center gap-2 text-accent">
-                                            {countForDiscount < 6 && <Info size={14} />}
-                                            {nextTierMsg}
-                                        </span>
+                                        <span className="text-stripe-secondary">{paidStrategyCount} Paid Strateg{paidStrategyCount === 1 ? 'y' : 'ies'} Selected</span>
                                     </div>
 
                                     <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -774,54 +725,34 @@ export default function App() {
                                         {/* Right: Totals & Action */}
                                         <div className="flex flex-col justify-between bg-canvas border border-stripe-border rounded p-4">
                                             <div className="space-y-2.5">
-                                                <div className="flex justify-between text-stripe-muted text-sm">
-                                                    <span>Subtotal</span>
-                                                    <span className="tabular-nums">${originalPrice.toLocaleString()}</span>
-                                                </div>
-                                                {discount > 0 && (
-                                                    <div className="flex justify-between text-success text-sm font-medium">
-                                                        <span>Discount ({(discount * 100).toFixed(0)}%)</span>
-                                                        <span className="tabular-nums">-${Math.round(originalPrice * discount).toLocaleString()}</span>
-                                                    </div>
-                                                )}
-                                                <div className="h-px bg-stripe-border my-2"></div>
                                                 <div className="flex justify-between text-stripe-primary text-lg font-semibold">
                                                     <span>Total</span>
-                                                    <span className="tabular-nums">${Math.round(finalPrice).toLocaleString()}</span>
+                                                    <span className="tabular-nums">${Math.round(totalPrice).toLocaleString()}</span>
                                                 </div>
                                             </div>
 
-                                            <button
-                                                onClick={handleCheckout}
-                                                disabled={isCheckingOut}
-                                                className="w-full mt-5 bg-accent hover:bg-accent-hover text-white font-semibold py-2.5 rounded transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
-                                            >
-                                                {isCheckingOut ? (
-                                                    <>
-                                                        <Loader2 size={16} className="animate-spin" />
-                                                        <span>Processing...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span>Proceed to Checkout</span>
-                                                        <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                                                    </>
-                                                )}
-                                            </button>
-                                            <p className="text-center text-xs text-stripe-muted mt-2.5 flex items-center justify-center gap-1">
-                                                <Check size={10} /> Secure payment. Instant access.
-                                            </p>
-
-                                            <button
-                                                onClick={handleSignalsInterest}
-                                                className="w-full mt-4 bg-white hover:bg-canvas text-stripe-primary font-semibold py-2.5 rounded border border-stripe-border transition-all flex items-center justify-center gap-2 group"
-                                            >
-                                                <span>Daily signals for this portfolio</span>
-                                                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-                                            </button>
-                                            <p className="text-center text-xs text-stripe-muted mt-2.5">
-                                                $90 per month. Cancel at any time.
-                                            </p>
+                                            <div>
+                                                <button
+                                                    onClick={handleCheckout}
+                                                    disabled={isCheckingOut}
+                                                    className="w-full mt-5 bg-accent hover:bg-accent-hover text-white font-semibold py-2.5 rounded transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+                                                >
+                                                    {isCheckingOut ? (
+                                                        <>
+                                                            <Loader2 size={16} className="animate-spin" />
+                                                            <span>Processing...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>Proceed to Checkout</span>
+                                                            <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <p className="text-center text-xs text-stripe-muted mt-2.5 flex items-center justify-center gap-1">
+                                                    <Check size={10} /> Secure payment. Instant access.
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
